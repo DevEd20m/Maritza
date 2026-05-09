@@ -5,6 +5,15 @@ import { LIORA_TRUST, LIORA_STEPS, LIORA_STATS, LIORA_REVIEWS, formatPrice } fro
 import { useRouterVM } from '../viewmodels/useRouterVM'
 import { useKitsVM } from '../viewmodels/useKitsVM'
 
+const KIT_THEMES = {
+  'piel-grasa':        { bg: '#EBF2EC', accent: '#3E6848', fg: '#162418', fgMuted: '#4E7058' },
+  'viaje':             { bg: '#F7EDD8', accent: '#9A5820', fg: '#281808', fgMuted: '#8A5030' },
+  'gym':               { bg: '#EDE8DE', accent: '#7A5E38', fg: '#201808', fgMuted: '#7A5A38' },
+  'primeros-auxilios': { bg: '#DCF0E8', accent: '#1E6040', fg: '#081E14', fgMuted: '#386850' },
+  'bienestar':         { bg: '#1A2620', accent: '#B0CCBA', fg: '#EEF4F0', fgMuted: '#80A490' },
+}
+const DEFAULT_THEME = { bg: '#F5F0E8', accent: '#5C7A5E', fg: '#2F3A35', fgMuted: '#6B7B71' }
+
 export default function Home({ screenRef }) {
   const { openKit, startQuiz } = useRouterVM()
   const { filteredKits, filters, activeFilter, setFilter } = useKitsVM()
@@ -26,26 +35,38 @@ export default function Home({ screenRef }) {
 
   const [statsRef, statsIn] = useInView({ threshold: 0.4 })
 
-  const shelfRef = useRef(null)
   const [activeCard, setActiveCard] = useState(0)
-  useEffect(() => {
-    const el = shelfRef.current
-    if (!el) return
-    const onScroll = () => {
-      const center = el.scrollLeft + el.clientWidth / 2
-      const cards = el.querySelectorAll('.shelf-card')
-      let bestIdx = 0, bestDist = Infinity
-      cards.forEach((c, i) => {
-        const cx = c.offsetLeft + c.offsetWidth / 2
-        const d = Math.abs(cx - center)
-        if (d < bestDist) { bestDist = d; bestIdx = i }
-      })
-      setActiveCard(bestIdx)
-    }
-    el.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => el.removeEventListener('scroll', onScroll)
-  }, [filteredKits])
+  const [rotation, setRotation] = useState(0)
+  const [expanded, setExpanded] = useState(false)
+  const touchStartX = useRef(null)
+
+  useEffect(() => { setActiveCard(0); setRotation(0) }, [activeFilter])
+  useEffect(() => setExpanded(false), [activeCard])
+
+  const angleStep = 360 / Math.max(filteredKits.length, 1)
+  const RADIUS = 220
+  const activeKit = filteredKits[Math.min(activeCard, filteredKits.length - 1)] || null
+  const theme = (activeKit && KIT_THEMES[activeKit.id]) || DEFAULT_THEME
+
+  const goTo = (i) => {
+    const total = filteredKits.length
+    let delta = i - activeCard
+    if (delta > total / 2) delta -= total
+    if (delta < -total / 2) delta += total
+    setRotation(r => r - delta * angleStep)
+    setActiveCard(i)
+  }
+  const goPrev = () => goTo((activeCard - 1 + filteredKits.length) % filteredKits.length)
+  const goNext = () => goTo((activeCard + 1) % filteredKits.length)
+
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX }
+  const onTouchEnd = (e) => {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    if (dx < -40) goNext()
+    else if (dx > 40) goPrev()
+    touchStartX.current = null
+  }
 
   const scrollToShelf = () => screenRef?.current?.scrollTo({ top: 740, behavior: 'smooth' })
 
@@ -117,36 +138,157 @@ export default function Home({ screenRef }) {
         </div>
       </section>
 
-      {/* EMAIL CAPTURE */}
-      <section style={{ background: 'var(--liora-verde-salvia)', color: 'var(--liora-cream)', padding: '32px 24px' }}>
-        <div className="eyebrow-cap" style={{ color: 'rgba(250,250,245,0.7)' }}>BIENVENIDA</div>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 24, lineHeight: 1.2, letterSpacing: '-0.01em', marginTop: 8, color: 'var(--liora-cream)' }}>
-          Ingresá tu email y recibí <em style={{ fontStyle: 'italic' }}>15% off</em> en tu primer kit.
-        </h3>
-        <form
-          onSubmit={(e) => { e.preventDefault(); if (email) setSubmitted(true) }}
-          style={{ display: 'flex', gap: 8, marginTop: 16, background: 'rgba(250,250,245,0.10)', border: '1px solid rgba(250,250,245,0.22)', borderRadius: 8, padding: 6 }}>
-          <input
-            type="email" required value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={submitted}
-            placeholder="tu@email.com"
-            style={{ flex: 1, background: 'transparent', border: 0, color: 'var(--liora-cream)', fontFamily: 'var(--font-body)', fontSize: 14, padding: '10px 12px', outline: 'none' }}
-          />
-          <button type="submit" className="btn btn-warm" style={{
-            minHeight: 40, padding: submitted ? '10px 14px' : '10px 18px',
-            background: submitted ? '#5C7A5E' : 'var(--liora-durazno-claro)',
-            color: submitted ? 'var(--liora-cream)' : 'var(--fg)',
-            transition: 'all 360ms var(--ease-out)',
-          }}>
-            {submitted ? <><IconLine name="check" size={16} stroke="currentColor"/> ¡Listo!</> : 'Quiero el 15%'}
-          </button>
-        </form>
-        {submitted && (
-          <div className="fade-in" style={{ marginTop: 12, fontSize: 13, color: 'rgba(250,250,245,0.85)' }}>
-            ¡Listo! Revisá tu correo <span style={{ color: '#C9D6CB' }}>·</span> el cupón llega en unos minutos.
+      {/* KIT SHOWCASE */}
+      <section style={{ paddingTop: 48 }}>
+        <div className="kit-section-header">
+          <div>
+            <div className="eyebrow-cap">VITRINA · KITS</div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 30, lineHeight: 1.1, letterSpacing: '-0.01em', margin: '8px 0 0' }}>
+              Encontrá tu <em style={{ fontStyle: 'italic' }}>kit ideal</em>
+            </h2>
           </div>
-        )}
+          <button className="btn-link" style={{ background: 'transparent', border: 0, padding: '8px 0', fontSize: 12, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer' }}>
+            Ver todos →
+          </button>
+        </div>
+
+        {/* Category filter pills */}
+        <div className="kit-pills-bar">
+          {filters.map(f => (
+            <button key={f.id} className={'kit-pill' + (f.id === activeFilter ? ' is-on' : '')}
+              aria-pressed={f.id === activeFilter}
+              onClick={() => setFilter(f.id)}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Themed showcase area */}
+        <div
+          className="kit-showcase"
+          style={{ background: theme.bg }}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          <div className="kit-showcase__inner">
+
+            {/* Left: Kit info */}
+            {activeKit && (
+              <div key={activeKit.id} className="kit-showcase__info fade-in">
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: theme.accent, marginBottom: 10 }}>
+                  KIT COLLECTION · {activeKit.items} productos
+                </div>
+                <h3 className="kit-showcase__name" style={{ color: theme.fg }}>
+                  {activeKit.name}
+                </h3>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.65, color: theme.fgMuted, margin: '0 0 18px', maxWidth: 340 }}>
+                  {activeKit.short}
+                </p>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, letterSpacing: '-0.02em', color: theme.fg, marginBottom: 22 }}>
+                  {formatPrice(activeKit.price)}
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    className="btn"
+                    style={{ background: theme.accent, color: theme.bg, minHeight: 44, padding: '10px 22px', fontSize: 14, borderRadius: 'var(--r-button)' }}
+                    onClick={() => openKit(activeKit.id)}
+                  >
+                    Ver kit
+                  </button>
+                  <button
+                    className="btn"
+                    style={{
+                      background: 'transparent', color: theme.fg,
+                      border: `1px solid ${theme.fg}55`,
+                      minHeight: 44, padding: '10px 20px', fontSize: 14, borderRadius: 'var(--r-button)',
+                    }}
+                    onClick={() => setExpanded(e => !e)}
+                  >
+                    {expanded ? 'Cerrar' : 'Explorar contenido'}
+                  </button>
+                </div>
+
+                {/* Product tags - expand on click */}
+                {expanded && (
+                  <div className="kit-products" style={{ marginTop: 20 }}>
+                    {activeKit.contains.map((item, i) => (
+                      <div
+                        key={i}
+                        className="kit-product-tag fade-up"
+                        style={{ animationDelay: `${i * 50}ms`, borderColor: theme.accent + '70', color: theme.fg }}
+                      >
+                        <span style={{ width: 6, height: 6, borderRadius: 999, background: theme.accent, flexShrink: 0 }}/>
+                        <span style={{ fontWeight: 500 }}>{item.name}</span>
+                        {item.size !== '—' && <span style={{ opacity: 0.5, fontSize: 11, marginLeft: 2 }}>· {item.size}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Right: 3D Carousel */}
+            <div className="kit-showcase__card">
+              <div className="kit-showcase__carousel">
+                <div
+                  className="carousel-3d-ring"
+                  style={{ transform: `rotateY(${rotation}deg)` }}
+                >
+                  {filteredKits.map((k, i) => (
+                    <div
+                      key={k.id}
+                      className="carousel-3d-item"
+                      style={{ transform: `rotateY(${i * angleStep}deg) translateZ(${RADIUS}px)` }}
+                    >
+                      <ShelfCard
+                        kit={k}
+                        active={i === activeCard}
+                        accentColor={theme.accent}
+                        onFocus={() => goTo(i)}
+                        onOpen={openKit}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Navigation */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, justifyContent: 'center', marginTop: 12 }}>
+                <button
+                  onClick={goPrev}
+                  style={{
+                    width: 38, height: 38, borderRadius: 999, cursor: 'pointer',
+                    border: `1px solid ${theme.fg}30`, background: theme.fg + '12', color: theme.fg,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {filteredKits.map((_, i) => (
+                    <button key={i} onClick={() => goTo(i)} style={{
+                      width: i === activeCard ? 16 : 6, height: 6, borderRadius: 999, border: 0, padding: 0,
+                      background: i === activeCard ? theme.accent : theme.fg + '40',
+                      cursor: 'pointer', transition: 'all var(--dur-base) var(--ease-out)',
+                    }}/>
+                  ))}
+                </div>
+                <button
+                  onClick={goNext}
+                  style={{
+                    width: 38, height: 38, borderRadius: 999, cursor: 'pointer',
+                    border: `1px solid ${theme.fg}30`, background: theme.fg + '12', color: theme.fg,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </section>
 
       {/* TRUST BAR */}
@@ -162,46 +304,8 @@ export default function Home({ screenRef }) {
         </div>
       </div>
 
-      {/* KIT SHELF */}
-      <section style={{ paddingTop: 48 }}>
-        <div style={{ padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div>
-            <div className="eyebrow-cap">VITRINA · KITS</div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 30, lineHeight: 1.1, letterSpacing: '-0.01em', margin: '8px 0 0' }}>
-              Encontrá tu <em style={{ fontStyle: 'italic' }}>kit ideal</em>
-            </h2>
-          </div>
-          <button className="btn-link" style={{ background: 'transparent', border: 0, padding: '8px 0', fontSize: 12, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer' }}>
-            Ver todos →
-          </button>
-        </div>
-
-        {/* Category filter pills */}
-        <div style={{ display: 'flex', gap: 8, padding: '16px 24px 0', overflowX: 'auto' }} className="no-scrollbar">
-          {filters.map(f => (
-            <button key={f.id} className={'kit-pill' + (f.id === activeFilter ? ' is-on' : '')}
-              aria-pressed={f.id === activeFilter}
-              onClick={() => setFilter(f.id)}>
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        <div ref={shelfRef} className="snap-x" style={{ marginTop: 16 }}>
-          {filteredKits.map((k, i) => (
-            <ShelfCard key={k.id} kit={k} index={i} active={i === activeCard} onOpen={openKit}/>
-          ))}
-        </div>
-
-        <div className="shelf-dots" style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 8 }}>
-          {filteredKits.map((_, i) => (
-            <span key={i} style={{ width: i === activeCard ? 18 : 6, height: 6, borderRadius: 999, background: i === activeCard ? 'var(--liora-verde-salvia)' : 'var(--liora-gris-medio)', transition: 'all var(--dur-base) var(--ease-out)' }}/>
-          ))}
-        </div>
-      </section>
-
       {/* HOW IT WORKS */}
-      <section className="section" style={{ marginTop: 24 }}>
+      <section className="section" style={{ marginTop: 0 }}>
         <div className="eyebrow-cap">CÓMO FUNCIONA</div>
         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 30, lineHeight: 1.1, letterSpacing: '-0.01em', margin: '8px 0 28px' }}>
           Tres pasos, sin <em style={{ fontStyle: 'italic' }}>vueltas</em>.
@@ -239,6 +343,40 @@ export default function Home({ screenRef }) {
         </div>
         <div className="snap-x" style={{ marginTop: 20 }}>
           {LIORA_REVIEWS.map((r, i) => <ReviewCard key={i} r={r}/>)}
+        </div>
+      </section>
+
+      {/* EMAIL CAPTURE */}
+      <section style={{ background: 'var(--liora-verde-salvia)', color: 'var(--liora-cream)', padding: '40px 24px' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+          <div className="eyebrow-cap" style={{ color: 'rgba(250,250,245,0.7)' }}>BIENVENIDA</div>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 26, lineHeight: 1.2, letterSpacing: '-0.01em', marginTop: 8, color: 'var(--liora-cream)' }}>
+            Ingresá tu email y recibí <em style={{ fontStyle: 'italic' }}>15% off</em> en tu primer kit.
+          </h3>
+          <form
+            onSubmit={(e) => { e.preventDefault(); if (email) setSubmitted(true) }}
+            style={{ display: 'flex', gap: 8, marginTop: 18, background: 'rgba(250,250,245,0.10)', border: '1px solid rgba(250,250,245,0.22)', borderRadius: 8, padding: 6 }}>
+            <input
+              type="email" required value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={submitted}
+              placeholder="tu@email.com"
+              style={{ flex: 1, background: 'transparent', border: 0, color: 'var(--liora-cream)', fontFamily: 'var(--font-body)', fontSize: 14, padding: '10px 12px', outline: 'none' }}
+            />
+            <button type="submit" className="btn btn-warm" style={{
+              minHeight: 40, padding: submitted ? '10px 14px' : '10px 18px',
+              background: submitted ? '#5C7A5E' : 'var(--liora-durazno-claro)',
+              color: submitted ? 'var(--liora-cream)' : 'var(--fg)',
+              transition: 'all 360ms var(--ease-out)',
+            }}>
+              {submitted ? <><IconLine name="check" size={16} stroke="currentColor"/> ¡Listo!</> : 'Quiero el 15%'}
+            </button>
+          </form>
+          {submitted && (
+            <div className="fade-in" style={{ marginTop: 12, fontSize: 13, color: 'rgba(250,250,245,0.85)' }}>
+              ¡Listo! Revisá tu correo <span style={{ color: '#C9D6CB' }}>·</span> el cupón llega en unos minutos.
+            </div>
+          )}
         </div>
       </section>
 
@@ -288,34 +426,46 @@ export default function Home({ screenRef }) {
   )
 }
 
-function ShelfCard({ kit, index, active, onOpen }) {
-  const [ref, seen] = useInView({ threshold: 0.15 })
+function ShelfCard({ kit, active, accentColor, onFocus, onOpen }) {
   const photoCls = `photo ${kit.photo || 'warm'}`
+  const borderAccent = accentColor || 'var(--liora-verde-salvia)'
   return (
     <article
-      ref={ref}
-      className="shelf-card"
-      onClick={() => onOpen(kit.id)}
+      onClick={active ? () => onOpen(kit.id) : onFocus}
       style={{
-        width: 260, background: 'var(--liora-beige)',
-        border: '1px solid var(--line)', borderRadius: 8,
-        overflow: 'hidden', cursor: 'pointer',
-        transform: `scale(${active ? 1.05 : 0.96}) translateY(${seen ? 0 : 16}px)`,
-        opacity: seen ? 1 : 0,
-        transition: `transform 360ms var(--ease-out) ${index * 80}ms, opacity 360ms var(--ease-out) ${index * 80}ms`,
+        width: '100%', height: '100%',
+        background: 'var(--liora-beige)',
+        border: `1px solid ${active ? borderAccent : 'var(--line)'}`,
+        borderRadius: 6, overflow: 'hidden', cursor: 'pointer',
+        display: 'flex', flexDirection: 'column',
+        boxShadow: active
+          ? '0 28px 64px rgba(47,58,53,0.32), 0 8px 24px rgba(47,58,53,0.14)'
+          : '0 2px 8px rgba(47,58,53,0.06)',
+        transition: 'box-shadow 420ms var(--ease-out), border-color 420ms var(--ease-out)',
       }}>
-      <div className={photoCls} style={{ height: 240 }}>
+      <div className={photoCls} style={{ height: 160, flexShrink: 0 }}>
         <div className="label">{kit.name.replace('Kit ', '')}</div>
       </div>
-      <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div className="eyebrow-cap">{kit.eyebrow}</div>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20, lineHeight: 1.2, margin: 0 }}>{kit.name}</h3>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, lineHeight: 1.55, color: 'var(--fg-muted)', margin: 0 }}>{kit.short}</p>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500 }}>{formatPrice(kit.price)}</div>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: 'var(--accent)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            VER <IconLine name="arrow" size={12} stroke="currentColor"/>
-          </span>
+      <div style={{ padding: '12px 14px', flex: 1, display: 'flex', flexDirection: 'column', gap: 5, overflow: 'hidden' }}>
+        <div className="eyebrow-cap" style={{ color: 'var(--fg-soft)' }}>{kit.eyebrow}</div>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, lineHeight: 1.2, margin: 0 }}>{kit.name}</h3>
+        <p style={{
+          fontFamily: 'var(--font-body)', fontSize: 12, lineHeight: 1.5,
+          color: 'var(--fg-muted)', margin: 0,
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>{kit.short}</p>
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 600, color: 'var(--fg)' }}>
+            {formatPrice(kit.price)}
+          </div>
+          <button className="btn btn-outline" style={{
+            width: '100%', minHeight: 36, padding: '8px 0', fontSize: 13,
+            opacity: active ? 1 : 0,
+            transition: 'opacity 300ms var(--ease-out)',
+            pointerEvents: 'none',
+          }}>
+            Ver kit
+          </button>
         </div>
       </div>
     </article>
