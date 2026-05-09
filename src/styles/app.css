@@ -1,0 +1,443 @@
+/* LIORA mobile web app — base styles */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); }
+
+/* ---- Stage: simulates mobile viewport on desktop ---- */
+.stage {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 30% 0%, #EFE8DA 0%, #FAFAF5 55%, #F2EADA 100%);
+  display: flex; flex-direction: column; align-items: center; padding: 24px 0;
+}
+.stage__shell {
+  width: 100%; max-width: 430px;
+  background: var(--liora-cream);
+  border-radius: 44px; border: 1px solid #E1E0DA; overflow: hidden; position: relative;
+  box-shadow: 0 30px 80px rgba(47,58,53,0.14), 0 6px 24px rgba(47,58,53,0.06);
+  height: calc(100vh - 48px); max-height: 920px; min-height: 760px;
+}
+.stage__chrome { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.stage__caption {
+  font-family: var(--font-body); font-size: 11px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--fg-soft); margin-bottom: 18px;
+}
+
+@media (max-width: 460px) {
+  .stage { padding: 0; background: var(--bg); }
+  .stage__shell { border-radius: 0; border: 0; box-shadow: none; height: 100vh; max-height: none; min-height: 0; }
+  .stage__caption { display: none; }
+}
+
+/* ---- Screen container ---- */
+.screen {
+  position: absolute; inset: 0;
+  background: var(--bg); overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+}
+.screen::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ---- Buttons ---- */
+.btn {
+  font-family: var(--font-body); font-weight: 500; font-size: 14px; letter-spacing: 0.01em;
+  border-radius: var(--r-button); padding: 14px 22px; min-height: 48px;
+  cursor: pointer; border: 0;
+  transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out), filter 100ms ease;
+  display: inline-flex; align-items: center; gap: 10px;
+  white-space: nowrap; justify-content: center;
+}
+.btn:active { filter: brightness(0.97); }
+.btn-primary { background: var(--liora-verde-salvia); color: var(--liora-cream); }
+.btn-primary:hover { background: var(--liora-verde-profundo); }
+.btn-outline { background: transparent; color: var(--fg); border: 1px solid var(--liora-verde-salvia); }
+.btn-outline:hover { background: var(--liora-durazno-claro); }
+.btn-warm { background: var(--liora-durazno-claro); color: var(--fg); }
+.btn-warm:hover { background: #EFDDC8; }
+.btn-link {
+  background: transparent; color: var(--accent); padding: 8px 0; min-height: 0;
+  font-weight: 600; text-decoration: underline; text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+.btn-link:hover { color: var(--liora-verde-profundo); }
+.btn-pill { border-radius: 999px; }
+
+.eyebrow-cap {
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.10em; text-transform: uppercase; color: var(--fg-soft);
+}
+
+/* ---- Kit filter pills ---- */
+.kit-pill {
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 8px 14px; font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  background: transparent; color: var(--fg); cursor: pointer; white-space: nowrap;
+  transition: all var(--dur-base) var(--ease-out);
+}
+.kit-pill[aria-pressed="true"], .kit-pill.is-on {
+  background: var(--liora-verde-salvia);
+  border-color: var(--liora-verde-salvia);
+  color: var(--liora-cream);
+}
+
+/* ---- Photo placeholder ---- */
+.photo {
+  position: relative;
+  background: linear-gradient(180deg, #EEE7DA 0%, #F2DCC2 100%);
+  display: flex; align-items: flex-end; justify-content: center;
+  overflow: hidden; border-radius: 0;
+}
+.photo::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 35%, rgba(255,255,255,0.55), transparent 55%),
+    radial-gradient(ellipse at 80% 80%, rgba(168,187,175,0.30), transparent 60%);
+  pointer-events: none;
+}
+.photo .label {
+  position: relative; font-family: var(--font-display); font-weight: 600;
+  font-size: 14px; letter-spacing: -0.01em; color: var(--liora-verde-salvia);
+  background: var(--liora-cream); padding: 8px 12px; margin-bottom: 14%;
+  border: 1px solid var(--line);
+}
+.photo.dark  { background: linear-gradient(180deg, #6B7B71 0%, #4E5A52 100%); }
+.photo.dark .label { color: var(--liora-cream); background: var(--liora-verde-profundo); border-color: rgba(250,250,245,0.18); }
+.photo.sage  { background: linear-gradient(180deg, #C9D6CB 0%, #A8BBAF 100%); }
+.photo.warm  { background: linear-gradient(180deg, #FAF1E6 0%, #F7EDE3 100%); }
+.photo.cream { background: linear-gradient(180deg, #F6F1E5 0%, #F2E9DB 100%); }
+
+/* ---- Animations ---- */
+@keyframes liora-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes liora-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes liora-slide-in-left {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes liora-slide-in-right {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes liora-pop {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes liora-pulse {
+  0%, 100% { transform: translateY(0); opacity: 0.9; }
+  50%       { transform: translateY(4px); opacity: 0.6; }
+}
+@keyframes liora-bounce-once {
+  0%   { transform: translateY(0); }
+  30%  { transform: translateY(-12px); }
+  50%  { transform: translateY(0); }
+  70%  { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+@keyframes liora-soft-pulse {
+  0%,100% { box-shadow: 0 6px 20px rgba(47,58,53,0.18), 0 0 0 0 rgba(78,90,82,0.35); }
+  50%     { box-shadow: 0 6px 20px rgba(47,58,53,0.18), 0 0 0 12px rgba(78,90,82,0); }
+}
+@keyframes liora-zoom-in {
+  from { transform: scale(1.0); }
+  to   { transform: scale(1.03); }
+}
+@keyframes liora-scale-pulse {
+  0%   { transform: scale(1.0); }
+  50%  { transform: scale(1.02); }
+  100% { transform: scale(1.0); }
+}
+@keyframes liora-wipe-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes liora-slide-right-out {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+@keyframes liora-trust-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes liora-detail-enter {
+  from { opacity: 0; transform: translateY(36px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes liora-detail-exit {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(36px) scale(0.98); }
+}
+@keyframes liora-q-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes liora-q-out-up {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-12px); }
+}
+@keyframes liora-hero-product {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes liora-detail-zoom {
+  from { transform: scale(1.0); }
+  to   { transform: scale(1.03); }
+}
+@keyframes liora-kit-assemble {
+  0%   { opacity: 0; transform: scale(0.85) translateY(12px); }
+  60%  { opacity: 1; transform: scale(1.02) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.fade-up { opacity: 0; animation: liora-fade-up 0.56s var(--ease-out) forwards; }
+.fade-in  { opacity: 0; animation: liora-fade-in 0.36s var(--ease-out) forwards; }
+.pop-in   { opacity: 0; animation: liora-pop 0.36s var(--ease-out) forwards; }
+
+/* ---- Top nav ---- */
+.topnav {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px;
+  background: rgba(250,250,245,0.78);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  transition: padding var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+  border-bottom: 1px solid transparent;
+}
+.topnav.is-scrolled { padding: 10px 20px; border-bottom-color: var(--line); }
+.topnav__icon-btn {
+  width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 0; cursor: pointer; color: var(--fg); border-radius: 999px;
+}
+.topnav__icon-btn:hover { background: var(--liora-durazno-claro); }
+.topnav__cart-dot {
+  position: absolute; top: 6px; right: 6px;
+  background: var(--liora-verde-salvia); color: var(--liora-cream);
+  font-family: var(--font-body); font-size: 9px; font-weight: 600;
+  width: 16px; height: 16px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* ---- Floating chat button ---- */
+.fab {
+  position: fixed; right: 16px; bottom: 16px; z-index: 50;
+  width: 56px; height: 56px; border-radius: 999px;
+  background: var(--liora-verde-salvia); color: var(--liora-cream);
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; cursor: pointer; box-shadow: 0 6px 20px rgba(47,58,53,0.22);
+  animation: liora-bounce-once 1.2s var(--ease-out) 3s 1, liora-soft-pulse 4s ease-in-out 5s infinite;
+}
+.fab:hover { background: var(--liora-verde-profundo); }
+
+/* ---- Sticky CTA bar ---- */
+.sticky-cta {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(250,250,245,0.92);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-top: 1px solid var(--line);
+  transform: translateY(110%);
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+.sticky-cta.is-on { transform: translateY(0); }
+
+/* ---- Quiz progress bar ---- */
+.qprog { height: 4px; background: var(--liora-gris-claro); border-radius: 999px; overflow: hidden; }
+.qprog__fill {
+  height: 100%; background: var(--liora-verde-salvia); border-radius: 999px;
+  transition: width 360ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Option cards ---- */
+.opt-card {
+  position: relative; background: var(--liora-cream);
+  border: 1.5px solid var(--line-strong); border-radius: 12px;
+  padding: 16px; cursor: pointer;
+  display: flex; flex-direction: column; gap: 10px;
+  transition: border-color var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out), transform 150ms var(--ease-out);
+}
+.opt-card:hover { border-color: var(--liora-verde-claro); }
+.opt-card.is-selected {
+  border-color: var(--liora-verde-salvia);
+  background: linear-gradient(180deg, var(--liora-cream) 0%, var(--liora-durazno-claro) 100%);
+  animation: liora-scale-pulse 150ms var(--ease-out);
+}
+.opt-card .opt-check {
+  position: absolute; top: 12px; right: 12px;
+  width: 22px; height: 22px; border-radius: 999px;
+  border: 1.5px solid var(--line-strong);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--liora-cream);
+  transition: all var(--dur-base) var(--ease-out);
+}
+.opt-card.is-selected .opt-check {
+  background: var(--liora-verde-salvia);
+  border-color: var(--liora-verde-salvia);
+  color: var(--liora-cream);
+}
+
+/* ---- Snap scroll containers ---- */
+.snap-x {
+  display: flex; gap: 16px;
+  overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 8px 24px 24px; scroll-padding-left: 24px;
+  -webkit-overflow-scrolling: touch;
+}
+.snap-x::-webkit-scrollbar { display: none; }
+.snap-x > * { scroll-snap-align: center; flex: 0 0 auto; }
+
+/* ---- Trust bar marquee ---- */
+.trust-bar {
+  background: var(--liora-arena);
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  overflow: hidden; position: relative;
+}
+.trust-bar__track {
+  display: flex; gap: 32px; padding: 14px 0;
+  width: max-content;
+  animation: liora-trust-marquee 28s linear infinite;
+}
+.trust-bar:hover .trust-bar__track { animation-play-state: paused; }
+.trust-item {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-body); font-size: 12px; font-weight: 500;
+  letter-spacing: 0.04em; color: var(--fg-muted); white-space: nowrap;
+}
+
+/* ---- Section paddings ---- */
+.section       { padding: 48px 24px; }
+.section--tight { padding: 32px 24px; }
+.section--dark  { background: var(--liora-verde-salvia); color: var(--liora-cream); }
+.section--sage  { background: var(--liora-verde-claro); }
+.section--warm  { background: var(--liora-durazno-claro); }
+.section--arena { background: var(--liora-arena); }
+
+/* ---- Utilities ---- */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* ---- Wipe overlay ---- */
+.wipe-overlay {
+  position: absolute; inset: 0; z-index: 200;
+  background: var(--liora-verde-salvia);
+  transform: translateY(100%); pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.wipe-overlay.is-active   { animation: liora-wipe-up 480ms var(--ease-out) forwards; pointer-events: all; }
+.wipe-overlay.is-clearing { animation: liora-wipe-up 360ms var(--ease-out) reverse forwards; }
+
+/* ---- Star rating ---- */
+.stars { display: inline-flex; gap: 2px; color: var(--liora-verde-salvia); }
+
+/* ================================================================
+   DISEÑO WEB RESPONSIVE — desktop (≥ 768 px)
+   Elimina el marco de simulador móvil y expande a viewport completo
+   ================================================================ */
+@media (min-width: 768px) {
+
+  /* 1. Quitar el chrome del teléfono */
+  .stage {
+    padding: 0;
+    align-items: stretch;
+    background: var(--bg);
+  }
+  .stage__caption { display: none; }
+  .stage__shell {
+    max-width: none;
+    width: 100%;
+    border-radius: 0;
+    border: 0;
+    box-shadow: none;
+    height: 100vh;
+    max-height: none;
+    min-height: 100vh;
+  }
+
+  /* 2. Navegación — padding más amplio */
+  .topnav { padding: 20px 56px; }
+  .topnav.is-scrolled { padding: 12px 56px; }
+
+  /* 3. Secciones — padding más amplio */
+  .section { padding: 80px 56px; }
+  .section--tight { padding: 52px 56px; }
+
+  /* 4. Hero: dos columnas texto / imagen */
+  .hero-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    padding: 72px 56px 80px !important;
+    align-items: center;
+    overflow: visible !important;
+  }
+  .hero-text { display: flex; flex-direction: column; }
+  .hero-text h1 { font-size: 62px !important; max-width: none !important; }
+  .hero-text p  { max-width: none !important; font-size: 17px !important; }
+  .hero-photo {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 0 !important;
+    height: 540px !important;
+    border-radius: 20px !important;
+    animation: none !important;
+  }
+  .hero-scroll-hint { display: none; }
+
+  /* 5. Shelves: scroll horizontal → grid */
+  .snap-x {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    overflow-x: visible;
+    scroll-snap-type: none;
+    padding: 8px 56px 40px;
+    gap: 24px;
+  }
+  .snap-x > * {
+    scroll-snap-align: none;
+    flex: none;
+    width: 100% !important;
+  }
+  .shelf-card { transform: none !important; }
+  .shelf-dots { display: none; }
+
+  /* 6. Cómo funciona: 3 columnas */
+  .steps-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  /* 7. Stats: fila horizontal */
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+  }
+  .stats-item { border-bottom: 0 !important; padding-bottom: 0 !important; }
+  .stats-item + .stats-item {
+    border-left: 1px solid rgba(47, 58, 53, 0.18);
+    padding-left: 32px;
+  }
+
+  /* 8. Kit detail — limitar ancho del contenido */
+  .kit-detail-body {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  /* 9. Quiz — centrar contenido */
+  .quiz-inner {
+    max-width: 620px;
+    margin: 0 auto;
+  }
+
+  /* 10. FAB más generosa en desktop */
+  .fab { right: 32px; bottom: 32px; width: 60px; height: 60px; }
+}
